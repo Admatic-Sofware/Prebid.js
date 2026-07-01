@@ -2,8 +2,6 @@ import { spec, ENDPOINT_URL, expandAuctionMacros } from 'modules/kimberliteBidAd
 import { assert } from 'chai';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
-const BIDDER_CODE = 'kimberlite';
-
 describe('kimberliteBidAdapter', function () {
   const sizes = [[640, 480]];
 
@@ -75,7 +73,7 @@ describe('kimberliteBidAdapter', function () {
       bidRequests = [
         {
           mediaTypes: {
-            [BANNER]: {sizes: sizes}
+            [BANNER]: { sizes: sizes }
           },
           params: {
             placementId: 'test-placement'
@@ -188,7 +186,7 @@ describe('kimberliteBidAdapter', function () {
             {
               bidId: 1,
               mediaTypes: {
-                banner: {sizes: sizes}
+                banner: { sizes: sizes }
               },
               params: {
                 placementId: 'test-placement'
@@ -252,7 +250,7 @@ describe('kimberliteBidAdapter', function () {
       });
 
       it('fails on empty response', function () {
-        const bids = spec.interpretResponse({body: ''}, bidRequest);
+        const bids = spec.interpretResponse({ body: '' }, bidRequest);
         assert.empty(bids);
       });
     });

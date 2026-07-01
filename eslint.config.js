@@ -93,6 +93,10 @@ module.exports = [
         tagNamePreference: {
           return: 'return'
         }
+      },
+      'import/resolver': {
+        [path.resolve('./plugins/eslint/resolver')]: true,
+        node: true,
       }
     },
     languageOptions: {
@@ -107,11 +111,24 @@ module.exports = [
     },
     rules: {
       'comma-dangle': 'off',
-      semi: 'off',
+      '@stylistic/comma-dangle': 'off',
+      '@stylistic/semi': ['error', 'always'],
       'no-undef': 2,
+      'no-constant-binary-expression': 'error',
+      'no-useless-assignment': 'error',
+      'prebid/no-redundant-validated-condition': 'error',
       'no-console': 'error',
+      'prebid/no-extra-function-args': 'error',
       'space-before-function-paren': 'off',
-      'import/extensions': ['error', 'ignorePackages'],
+      '@stylistic/space-before-function-paren': 'off',
+      'import/no-unresolved': 'error',
+      'import/named': 'error',
+      'import/default': 'error',
+      'import/export': 'error',
+      'import/no-named-as-default': 'warn',
+      'import/no-named-as-default-member': 'warn',
+      'import/no-duplicates': 'warn',
+      'prebid/no-implicit-operand-conversion': 'error',
       'no-restricted-syntax': [
         'error',
         {
@@ -164,19 +181,18 @@ module.exports = [
       'object-shorthand': 'off',
       'prefer-regex-literals': 'off',
       'no-case-declarations': 'off',
-      'no-useless-catch': 'off',
       '@stylistic/quotes': 'off',
       '@stylistic/quote-props': 'off',
-      '@stylistic/array-bracket-spacing': 'off',
-      '@stylistic/object-curly-spacing': 'off',
-      '@stylistic/semi': 'off',
-      '@stylistic/space-before-function-paren': 'off',
       '@stylistic/multiline-ternary': 'off',
-      '@stylistic/computed-property-spacing': 'off',
-      '@stylistic/lines-between-class-members': 'off',
-      '@stylistic/comma-dangle': 'off',
-      '@stylistic/object-curly-newline': 'off',
-      '@stylistic/object-property-newline': 'off',
+    }
+  },
+  {
+    files: getSourceFolders().map(dir => `${dir}/**/*.d.ts`),
+    ignores: [
+      'src/types/**/*'
+    ],
+    rules: {
+      'prebid/declaration-filename': 'error'
     }
   },
   ...Object.entries(allowedImports).map(([path, allowed]) => {
@@ -208,6 +224,21 @@ module.exports = [
             property: 'sendBeacon',
             object: 'navigator',
             message: 'use ajax.js instead'
+          },
+          {
+            property: 'doNotTrack',
+            object: 'navigator',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+          },
+          {
+            property: 'msDoNotTrack',
+            object: 'navigator',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
+          },
+          {
+            property: 'doNotTrack',
+            object: 'window',
+            message: 'DNT was deprecated by W3C; Prebid no longer supports DNT signals'
           },
           ...['outerText', 'innerText'].map(property => ({
             property,
@@ -257,7 +288,6 @@ module.exports = [
       'chai-friendly/no-unused-expressions': 'error',
       // tests were not subject to many rules and they are now a nightmare. rules below this line should be removed over time
       'no-undef': 'off',
-      'no-unused-vars': 'off',
       'no-useless-escape': 'off',
       'no-return-assign': 'off',
       'camelcase': 'off'

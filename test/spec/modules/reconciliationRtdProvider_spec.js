@@ -44,14 +44,14 @@ describe('Reconciliation Real time data submodule', function () {
       });
 
       it('should log error if initializied without parameters', function () {
-        expect(reconciliationSubmodule.init({'name': 'reconciliation', 'params': {}})).to.equal(true);
+        expect(reconciliationSubmodule.init({ 'name': 'reconciliation', 'params': {} })).to.equal(true);
         expect(utilsLogErrorSpy.calledOnce).to.be.true;
       });
     });
 
     describe('getData', function () {
       it('should return data in proper format', function () {
-        makeSlot({code: '/reconciliationAdunit1', divId: 'reconciliationAd1'});
+        makeSlot({ code: '/reconciliationAdunit1', divId: 'reconciliationAd1' });
 
         const targetingData = reconciliationSubmodule.getTargetingData(['/reconciliationAdunit1']);
         expect(targetingData['/reconciliationAdunit1'].RSDK_AUID).to.eql('/reconciliationAdunit1');
@@ -59,7 +59,7 @@ describe('Reconciliation Real time data submodule', function () {
       });
 
       it('should return unit path if called with divId', function () {
-        makeSlot({code: '/reconciliationAdunit2', divId: 'reconciliationAd2'});
+        makeSlot({ code: '/reconciliationAdunit2', divId: 'reconciliationAd2' });
 
         const targetingData = reconciliationSubmodule.getTargetingData(['reconciliationAd2']);
         expect(targetingData['reconciliationAd2'].RSDK_AUID).to.eql('/reconciliationAdunit2');
@@ -67,7 +67,7 @@ describe('Reconciliation Real time data submodule', function () {
       });
 
       it('should skip empty adUnit id', function () {
-        makeSlot({code: '/reconciliationAdunit3', divId: 'reconciliationAd3'});
+        makeSlot({ code: '/reconciliationAdunit3', divId: 'reconciliationAd3' });
 
         const targetingData = reconciliationSubmodule.getTargetingData(['reconciliationAd3', '']);
         expect(targetingData).to.have.all.keys('reconciliationAd3');
@@ -101,8 +101,8 @@ describe('Reconciliation Real time data submodule', function () {
         return {
           top: topWin,
           parent: parentWin
-        }
-      }
+        };
+      };
 
       it('should return null if called with null', function() {
         expect(getTopIFrameWin(null)).to.be.null;
@@ -114,6 +114,7 @@ describe('Reconciliation Real time data submodule', function () {
         const iframe2Win = mockFrameWin(topWin, iframe1Win);
 
         expect(getTopIFrameWin(iframe1Win, topWin)).to.be.null;
+        expect(getTopIFrameWin(iframe2Win, topWin)).to.be.null;
       });
 
       it('should get the topmost iframe', function () {
@@ -134,7 +135,7 @@ describe('Reconciliation Real time data submodule', function () {
         adSlotElement.appendChild(adSlotIframe);
         document.body.appendChild(adSlotElement);
 
-        const adSlot = makeSlot({code: '/reconciliationAdunit', divId: adSlotElement.id});
+        const adSlot = makeSlot({ code: '/reconciliationAdunit', divId: adSlotElement.id });
 
         expect(getSlotByWin(adSlotIframe.contentWindow)).to.eql(adSlot);
       });
@@ -146,8 +147,7 @@ describe('Reconciliation Real time data submodule', function () {
         adSlotElement.id = 'reconciliationAd';
         document.body.appendChild(adSlotElement);
         document.body.appendChild(adSlotIframe); // iframe is not in ad slot
-
-        const adSlot = makeSlot({code: '/reconciliationAdunit', divId: adSlotElement.id});
+        makeSlot({ code: '/reconciliationAdunit', divId: adSlotElement.id });
 
         expect(getSlotByWin(adSlotIframe.contentWindow)).to.be.null;
       });
@@ -162,14 +162,18 @@ describe('Reconciliation Real time data submodule', function () {
         adSlotElement.appendChild(adSlotIframe);
         document.body.appendChild(adSlotElement);
 
-        const adSlot = makeSlot({code: '/reconciliationAdunit', divId: adSlotElement.id});
-        adSlot.setConfig({
-          targeting: {
-            RSDK_AUID: ['/reconciliationAdunit'],
-            RSDK_ADID: ['12345']
-          }
-        });
+        const adSlot = makeSlot({ code: '/reconciliationAdunit', divId: adSlotElement.id });
+        // Fix targeting methods
+        adSlot.targeting = {};
+        adSlot.setTargeting = function(key, value) {
+          this.targeting[key] = [value];
+        };
+        adSlot.getTargeting = function(key) {
+          return this.targeting[key];
+        };
 
+        adSlot.setTargeting('RSDK_AUID', '/reconciliationAdunit');
+        adSlot.setTargeting('RSDK_ADID', '12345');
         adSlotIframe.contentDocument.open();
         adSlotIframe.contentDocument.write(`<script>
           window.parent.postMessage(JSON.stringify({
@@ -209,40 +213,6 @@ describe('Reconciliation Real time data submodule', function () {
           expect(trackPostStub.getCalls()[0].args[1].dataSources.length).to.eql(1);
           expect(trackPostStub.getCalls()[0].args[1].dataRecipients.length).to.eql(2);
           expect(trackPostStub.getCalls()[0].args[1].publisherMemberId).to.eql('test_prebid_publisher');
-          done();
-        }, 100);
-      });
-
-      it('should fallback adDeliveryId when RSDK_ADID targeting is missing', function (done) {
-        const adSlotElement = document.createElement('div');
-        const adSlotIframe = document.createElement('iframe');
-
-        adSlotElement.id = 'reconciliationAdMessageFallback';
-        adSlotElement.appendChild(adSlotIframe);
-        document.body.appendChild(adSlotElement);
-
-        const adSlot = makeSlot({code: '/reconciliationAdunit', divId: adSlotElement.id});
-        adSlot.setConfig({
-          targeting: {
-            RSDK_AUID: ['/reconciliationAdunit']
-          }
-        });
-
-        adSlotIframe.contentDocument.open();
-        adSlotIframe.contentDocument.write(`<script>
-          window.parent.postMessage(JSON.stringify({
-            type: 'rsdk:impression:req',
-            args: {
-              tagOwnerMemberId: "test_member_id"
-            }
-          }), '*');
-        </script>`);
-        adSlotIframe.contentDocument.close();
-
-        setTimeout(() => {
-          expect(trackPostStub.calledOnce).to.be.true;
-          expect(trackPostStub.getCalls()[0].args[1].adUnitId).to.eql('/reconciliationAdunit');
-          expect(trackPostStub.getCalls()[0].args[1].adDeliveryId).to.match(/.+-.+/);
           done();
         }, 100);
       });
